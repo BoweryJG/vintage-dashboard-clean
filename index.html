@@ -178,9 +178,9 @@
             
             createGauges() {
                 const gaugeConfigs = [
-                    { name: 'Performance', position: { x: 0, y: 0, z: 3 }, value: 75, max: 100, size: 1.5 },
-                    { name: 'Revenue', position: { x: -3, y: 0, z: 4 }, value: 60, max: 100, size: 1.2 },
-                    { name: 'Pipeline', position: { x: 3, y: 0, z: 4 }, value: 45, max: 100, size: 1.2 }
+                    { name: 'Performance', position: { x: 0, y: 0.2, z: 3 }, value: 75, max: 100, size: 1.5 },
+                    { name: 'Revenue', position: { x: -3, y: 0.5, z: 4 }, value: 60, max: 100, size: 1.2 },
+                    { name: 'Pipeline', position: { x: 3, y: 0.5, z: 4 }, value: 45, max: 100, size: 1.2 }
                 ];
                 
                 gaugeConfigs.forEach(config => {
@@ -263,10 +263,10 @@
                 needleTip.rotation.z = Math.PI / 2;
                 needleGroup.add(needleTip);
                 
-                // Position and rotate the entire needle
-                needleGroup.position.set(config.position.x, config.position.y + 0.18, config.position.z);
-                needleGroup.rotation.z = this.valueToAngle(config.value, config.max);
+                // Position and rotate the entire needle - elevated for visibility
+                needleGroup.position.set(config.position.x, config.position.y + 0.20, config.position.z);
                 needleGroup.rotation.x = -Math.PI / 2;
+                needleGroup.rotation.z = this.valueToAngle(config.value, config.max);
                 needleGroup.castShadow = true;
                 group.add(needleGroup);
                 
@@ -280,7 +280,7 @@
                     clearcoatRoughness: 0.1
                 });
                 const centerBolt = new THREE.Mesh(centerBoltGeometry, centerBoltMaterial);
-                centerBolt.position.set(config.position.x, config.position.y + 0.21, config.position.z);
+                centerBolt.position.set(config.position.x, config.position.y + 0.22, config.position.z);
                 centerBolt.rotation.x = -Math.PI / 2;
                 centerBolt.castShadow = true;
                 group.add(centerBolt);
@@ -342,7 +342,7 @@
                 });
                 
                 const glass = new THREE.Mesh(glassGeometry, glassMaterial);
-                glass.position.set(config.position.x, config.position.y + 0.22, config.position.z);
+                glass.position.set(config.position.x, config.position.y + 0.24, config.position.z);
                 glass.rotation.x = -Math.PI / 2;
                 group.add(glass);
             }
