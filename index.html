@@ -195,7 +195,7 @@
             createGauge(config) {
                 const group = new THREE.Group();
                 
-                // VINTAGE: Brushed aluminum gauge face
+                // VINTAGE: Brushed aluminum gauge face - VERTICAL WALL MOUNT
                 const faceGeometry = new THREE.CylinderGeometry(config.size, config.size, 0.12, 64);
                 const faceMaterial = new THREE.MeshPhysicalMaterial({
                     color: 0x2a2a2a,
@@ -206,8 +206,8 @@
                     reflectivity: 0.8
                 });
                 const face = new THREE.Mesh(faceGeometry, faceMaterial);
-                face.position.set(config.position.x, config.position.y + 0.15, config.position.z);
-                face.rotation.x = -Math.PI / 2;
+                face.position.set(config.position.x, config.position.y, config.position.z);
+                face.rotation.x = 0; // VERTICAL - no rotation for wall mount
                 face.castShadow = true;
                 face.receiveShadow = true;
                 group.add(face);
@@ -223,8 +223,8 @@
                     reflectivity: 1.0
                 });
                 const bezel = new THREE.Mesh(bezelGeometry, bezelMaterial);
-                bezel.position.set(config.position.x, config.position.y + 0.15, config.position.z);
-                bezel.rotation.x = -Math.PI / 2;
+                bezel.position.set(config.position.x, config.position.y, config.position.z);
+                bezel.rotation.x = 0; // VERTICAL bezel
                 bezel.castShadow = true;
                 group.add(bezel);
                 
@@ -246,8 +246,8 @@
                     emissiveIntensity: 0.5
                 });
                 const needleShaft = new THREE.Mesh(needleShaftGeometry, needleShaftMaterial);
-                needleShaft.position.y = config.size * 0.35;
-                needleShaft.rotation.z = Math.PI / 2;
+                needleShaft.position.x = config.size * 0.35; // HORIZONTAL for vertical gauge
+                needleShaft.rotation.y = Math.PI / 2; // Point horizontally
                 needleGroup.add(needleShaft);
                 
                 // BRIGHT Chrome needle tip
@@ -263,14 +263,14 @@
                     emissiveIntensity: 0.3
                 });
                 const needleTip = new THREE.Mesh(needleTipGeometry, needleTipMaterial);
-                needleTip.position.y = config.size * 0.7;
-                needleTip.rotation.z = Math.PI / 2;
+                needleTip.position.x = config.size * 0.7; // HORIZONTAL tip for vertical gauge
+                needleTip.rotation.y = Math.PI / 2; // Point horizontally  
                 needleGroup.add(needleTip);
                 
-                // Position and rotate the entire needle - MUCH HIGHER FOR VISIBILITY
-                needleGroup.position.set(config.position.x, config.position.y + 0.50, config.position.z);
-                needleGroup.rotation.x = -Math.PI / 2;
-                needleGroup.rotation.z = this.valueToAngle(config.value, config.max);
+                // Position and rotate the entire needle - VERTICAL WALL MOUNT STYLE
+                needleGroup.position.set(config.position.x, config.position.y, config.position.z + 0.10);
+                needleGroup.rotation.x = 0; // NO rotation for vertical mount
+                needleGroup.rotation.z = this.valueToAngle(config.value, config.max); // Rotate around Z for wall mount
                 needleGroup.castShadow = true;
                 group.add(needleGroup);
                 
@@ -286,8 +286,8 @@
                     clearcoatRoughness: 0.1
                 });
                 const centerBolt = new THREE.Mesh(centerBoltGeometry, centerBoltMaterial);
-                centerBolt.position.set(config.position.x, config.position.y + 0.22, config.position.z);
-                centerBolt.rotation.x = -Math.PI / 2;
+                centerBolt.position.set(config.position.x, config.position.y, config.position.z + 0.07);
+                centerBolt.rotation.x = 0; // VERTICAL center bolt
                 centerBolt.castShadow = true;
                 group.add(centerBolt);
                 
@@ -311,7 +311,7 @@
                     const angle = (Math.PI * 2 * i) / screwCount;
                     const radius = config.size + 0.25;
                     const x = Math.cos(angle) * radius;
-                    const z = Math.sin(angle) * radius;
+                    const y = Math.sin(angle) * radius; // Y instead of Z for vertical mount
                     
                     const screwGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.08, 6);
                     const screwMaterial = new THREE.MeshPhysicalMaterial({
@@ -324,10 +324,10 @@
                     const screw = new THREE.Mesh(screwGeometry, screwMaterial);
                     screw.position.set(
                         config.position.x + x,
-                        config.position.y + 0.19,
-                        config.position.z + z
+                        config.position.y + y,
+                        config.position.z + 0.08
                     );
-                    screw.rotation.x = -Math.PI / 2;
+                    screw.rotation.x = 0; // VERTICAL screws
                     screw.castShadow = true;
                     group.add(screw);
                 }
@@ -348,8 +348,8 @@
                 });
                 
                 const glass = new THREE.Mesh(glassGeometry, glassMaterial);
-                glass.position.set(config.position.x, config.position.y + 0.24, config.position.z);
-                glass.rotation.x = -Math.PI / 2;
+                glass.position.set(config.position.x, config.position.y, config.position.z + 0.05);
+                glass.rotation.x = 0; // VERTICAL glass
                 group.add(glass);
             }
             
@@ -358,7 +358,7 @@
                 for (let i = 0; i <= markings; i++) {
                     const angle = -Math.PI * 0.75 + (Math.PI * 1.5 * i / markings);
                     const x = Math.cos(angle) * (config.size * 0.8);
-                    const z = Math.sin(angle) * (config.size * 0.8);
+                    const y = Math.sin(angle) * (config.size * 0.8); // Y for vertical gauge
                     
                     const isMajor = i % 5 === 0;
                     const isMedium = i % 2 === 0 && !isMajor;
@@ -391,11 +391,11 @@
                     const mark = new THREE.Mesh(markGeometry, markMaterial);
                     mark.position.set(
                         config.position.x + x, 
-                        config.position.y + 0.17, 
-                        config.position.z + z
+                        config.position.y + y, 
+                        config.position.z + 0.02
                     );
-                    mark.rotation.x = -Math.PI / 2;
-                    mark.rotation.y = angle + Math.PI / 2;
+                    mark.rotation.x = 0; // VERTICAL marks
+                    mark.rotation.z = angle + Math.PI / 2; // Rotate around Z for vertical gauge
                     mark.castShadow = true;
                     
                     group.add(mark);
