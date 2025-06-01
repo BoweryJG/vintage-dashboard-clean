@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vintage Performance Dashboard - CLEAN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Eurostile:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', 'Eurostile', monospace;
+            background: #000;
+            overflow: hidden;
+            color: #E5E4E2;
+        }
+        
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        #debug {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #00ff00;
+            max-width: 300px;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: 2px solid #666;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Eurostile', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: #555;
+            border-color: #999;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="debug">
+        <div><strong>🔧 CLEAN DEBUG DASHBOARD</strong></div>
+        <div id="clickStatus">Click Status: Ready</div>
+        <div id="raycastStatus">Raycasting: Ready</div>
+        <div id="gaugeCount">Gauges: Loading...</div>
+    </div>
+
+    <div id="controls">
+        <button id="testButton">TEST ANIMATION</button>
+        <button id="resetButton">RESET VIEW</button>
+    </div>
+
+    <!-- Load Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+    
+    <script>
+        console.log('🆕 CLEAN VINTAGE DASHBOARD STARTING...');
+        
+        // Global debug helpers
+        window.updateDebug = (key, value) => {
+            const element = document.getElementById(key);
+            if (element) element.textContent = `${key.replace(/([A-Z])/g, ' $1')}: ${value}`;
+        };
+
+        class CleanVintageDashboard {
+            constructor() {
+                console.log('🚀 Clean Dashboard Init');
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.gauges = [];
+                this.mouse = new THREE.Vector2();
+                this.raycaster = new THREE.Raycaster();
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupScene();
+                this.setupCamera();
+                this.setupRenderer();
+                this.setupLights();
+                this.createGauges();
+                this.setupEvents();
+                this.animate();
+                
+                updateDebug('gaugeCount', this.gauges.length);
+                console.log('✅ Clean Dashboard Ready!');
+            }
+            
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x001122);
+                console.log('✅ Scene created');
+            }
+            
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(0, 3, 8);
+                this.camera.lookAt(0, 0, 2);
+                console.log('✅ Camera setup');
+            }
+            
+            setupRenderer() {
+                this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                console.log('✅ Renderer setup');
+            }
+            
+            setupLights() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                directionalLight.position.set(5, 10, 5);
+                this.scene.add(directionalLight);
+                console.log('✅ Lights added');
+            }
+            
+            createGauges() {
+                const gaugeConfigs = [
+                    { name: 'Performance', position: { x: 0, y: 0, z: 3 }, value: 75, max: 100, size: 1.5 },
+                    { name: 'Revenue', position: { x: -3, y: 0, z: 4 }, value: 60, max: 100, size: 1.2 },
+                    { name: 'Pipeline', position: { x: 3, y: 0, z: 4 }, value: 45, max: 100, size: 1.2 }
+                ];
+                
+                gaugeConfigs.forEach(config => {
+                    const gauge = this.createGauge(config);
+                    this.gauges.push(gauge);
+                    this.scene.add(gauge.group);
+                });
+                
+                console.log('✅ Gauges created:', this.gauges.length);
+            }
+            
+            createGauge(config) {
+                const group = new THREE.Group();
+                
+                // Gauge face
+                const faceGeometry = new THREE.CylinderGeometry(config.size, config.size, 0.1, 32);
+                const faceMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0x2a2a2a,
+                    metalness: 0.9,
+                    roughness: 0.3
+                });
+                const face = new THREE.Mesh(faceGeometry, faceMaterial);
+                face.position.set(config.position.x, config.position.y, config.position.z);
+                face.rotation.x = -Math.PI / 2;
+                group.add(face);
+                
+                // Needle
+                const needleGeometry = new THREE.CylinderGeometry(0.02, 0.02, config.size * 0.7, 8);
+                const needleMaterial = new THREE.MeshPhysicalMaterial({ color: 0xff0000 });
+                const needle = new THREE.Mesh(needleGeometry, needleMaterial);
+                needle.position.set(config.position.x, config.position.y + 0.1, config.position.z);
+                needle.rotation.z = this.valueToAngle(config.value, config.max);
+                needle.rotation.x = -Math.PI / 2;
+                group.add(needle);
+                
+                return {
+                    group: group,
+                    needle: needle,
+                    config: config,
+                    face: face
+                };
+            }
+            
+            valueToAngle(value, max) {
+                const normalizedValue = Math.min(value / max, 1);
+                return -Math.PI * 0.75 + (Math.PI * 1.5 * normalizedValue);
+            }
+            
+            setupEvents() {
+                const canvas = document.getElementById('canvas');
+                
+                // Basic click test
+                canvas.addEventListener('click', (event) => {
+                    console.log('🟢 CANVAS CLICK!', { x: event.clientX, y: event.clientY });
+                    updateDebug('clickStatus', `Click at ${event.clientX}, ${event.clientY}`);
+                    
+                    // Update mouse coordinates
+                    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                    
+                    // Raycast
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    
+                    // Get all gauge meshes
+                    const allMeshes = [];
+                    this.gauges.forEach(gauge => {
+                        allMeshes.push(gauge.face);
+                        allMeshes.push(gauge.needle);
+                    });
+                    
+                    const intersects = this.raycaster.intersectObjects(allMeshes);
+                    console.log('🎯 Intersections:', intersects.length);
+                    updateDebug('raycastStatus', `Found ${intersects.length} intersections`);
+                    
+                    if (intersects.length > 0) {
+                        // Find which gauge was clicked
+                        const clickedMesh = intersects[0].object;
+                        const clickedGauge = this.gauges.find(g => g.face === clickedMesh || g.needle === clickedMesh);
+                        
+                        if (clickedGauge) {
+                            console.log('🎊 GAUGE CLICKED:', clickedGauge.config.name);
+                            this.animateGauge(clickedGauge, Math.random() * clickedGauge.config.max);
+                        }
+                    }
+                });
+                
+                // Test button
+                document.getElementById('testButton').addEventListener('click', () => {
+                    console.log('🧪 TEST BUTTON');
+                    if (this.gauges.length > 0) {
+                        const randomGauge = this.gauges[Math.floor(Math.random() * this.gauges.length)];
+                        this.animateGauge(randomGauge, Math.random() * randomGauge.config.max);
+                    }
+                });
+                
+                // Reset button
+                document.getElementById('resetButton').addEventListener('click', () => {
+                    this.camera.position.set(0, 3, 8);
+                    this.camera.lookAt(0, 0, 2);
+                });
+                
+                console.log('✅ Events setup');
+            }
+            
+            animateGauge(gauge, newValue) {
+                console.log(`🎬 Animating ${gauge.config.name} to ${newValue.toFixed(1)}`);
+                
+                const targetAngle = this.valueToAngle(newValue, gauge.config.max);
+                const startAngle = gauge.needle.rotation.z;
+                const startTime = Date.now();
+                const duration = 1000;
+                
+                const animate = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    gauge.needle.rotation.z = startAngle + (targetAngle - startAngle) * easeProgress;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+        
+        // Initialize when ready
+        window.addEventListener('load', () => {
+            console.log('🎯 Starting Clean Dashboard...');
+            window.dashboard = new CleanVintageDashboard();
+        });
+    </script>
+</body>
+</html>
