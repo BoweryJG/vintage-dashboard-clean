@@ -139,17 +139,41 @@
                 this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                console.log('✅ Renderer setup');
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
+                console.log('✅ Renderer setup with shadows');
             }
             
             setupLights() {
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                // BRIGHT ambient light for vintage materials
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
                 this.scene.add(ambientLight);
                 
+                // Main directional light for shadows
                 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
                 directionalLight.position.set(5, 10, 5);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
                 this.scene.add(directionalLight);
-                console.log('✅ Lights added');
+                
+                // Warm dashboard accent light (vintage automotive)
+                const warmLight = new THREE.PointLight(0xB7895F, 1.0, 20);
+                warmLight.position.set(0, 3, 5);
+                this.scene.add(warmLight);
+                
+                // Blue performance accent lights
+                const accentLight1 = new THREE.PointLight(0x4488ff, 0.3, 12);
+                accentLight1.position.set(-3, 2, 6);
+                this.scene.add(accentLight1);
+                
+                const accentLight2 = new THREE.PointLight(0x4488ff, 0.3, 12);
+                accentLight2.position.set(3, 2, 6);
+                this.scene.add(accentLight2);
+                
+                console.log('✅ Vintage lighting setup');
             }
             
             createGauges() {
@@ -171,33 +195,205 @@
             createGauge(config) {
                 const group = new THREE.Group();
                 
-                // Gauge face
-                const faceGeometry = new THREE.CylinderGeometry(config.size, config.size, 0.1, 32);
+                // VINTAGE: Brushed aluminum gauge face
+                const faceGeometry = new THREE.CylinderGeometry(config.size, config.size, 0.12, 64);
                 const faceMaterial = new THREE.MeshPhysicalMaterial({
                     color: 0x2a2a2a,
-                    metalness: 0.9,
-                    roughness: 0.3
+                    metalness: 0.95,
+                    roughness: 0.25,
+                    clearcoat: 0.8,
+                    clearcoatRoughness: 0.15,
+                    reflectivity: 0.8
                 });
                 const face = new THREE.Mesh(faceGeometry, faceMaterial);
-                face.position.set(config.position.x, config.position.y, config.position.z);
+                face.position.set(config.position.x, config.position.y + 0.15, config.position.z);
                 face.rotation.x = -Math.PI / 2;
+                face.castShadow = true;
+                face.receiveShadow = true;
                 group.add(face);
                 
-                // Needle
-                const needleGeometry = new THREE.CylinderGeometry(0.02, 0.02, config.size * 0.7, 8);
-                const needleMaterial = new THREE.MeshPhysicalMaterial({ color: 0xff0000 });
-                const needle = new THREE.Mesh(needleGeometry, needleMaterial);
-                needle.position.set(config.position.x, config.position.y + 0.1, config.position.z);
-                needle.rotation.z = this.valueToAngle(config.value, config.max);
-                needle.rotation.x = -Math.PI / 2;
-                group.add(needle);
+                // VINTAGE: Chrome bezel with vintage styling
+                const bezelGeometry = new THREE.TorusGeometry(config.size + 0.12, 0.18, 12, 48);
+                const bezelMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xc0c0c0,
+                    metalness: 1.0,
+                    roughness: 0.15,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.05,
+                    reflectivity: 1.0
+                });
+                const bezel = new THREE.Mesh(bezelGeometry, bezelMaterial);
+                bezel.position.set(config.position.x, config.position.y + 0.15, config.position.z);
+                bezel.rotation.x = -Math.PI / 2;
+                bezel.castShadow = true;
+                group.add(bezel);
+                
+                // Add chrome screw heads around bezel
+                this.createScrewHeads(group, config);
+                
+                // VINTAGE: Chrome-tipped needle with vintage tachometer style
+                const needleGroup = new THREE.Group();
+                
+                // Main needle shaft (deep red)
+                const needleShaftGeometry = new THREE.CylinderGeometry(0.02, 0.04, config.size * 0.7, 8);
+                const needleShaftMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0x8B0000,
+                    metalness: 0.3,
+                    roughness: 0.4,
+                    clearcoat: 0.9,
+                    clearcoatRoughness: 0.1
+                });
+                const needleShaft = new THREE.Mesh(needleShaftGeometry, needleShaftMaterial);
+                needleShaft.position.y = config.size * 0.35;
+                needleShaft.rotation.z = Math.PI / 2;
+                needleGroup.add(needleShaft);
+                
+                // Chrome needle tip
+                const needleTipGeometry = new THREE.ConeGeometry(0.08, 0.25, 8);
+                const needleTipMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xffffff,
+                    metalness: 1.0,
+                    roughness: 0.05,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.02,
+                    reflectivity: 1.0
+                });
+                const needleTip = new THREE.Mesh(needleTipGeometry, needleTipMaterial);
+                needleTip.position.y = config.size * 0.65;
+                needleTip.rotation.z = Math.PI / 2;
+                needleGroup.add(needleTip);
+                
+                // Position and rotate the entire needle
+                needleGroup.position.set(config.position.x, config.position.y + 0.18, config.position.z);
+                needleGroup.rotation.z = this.valueToAngle(config.value, config.max);
+                needleGroup.rotation.x = -Math.PI / 2;
+                needleGroup.castShadow = true;
+                group.add(needleGroup);
+                
+                // VINTAGE: Steel center bolt with hex head
+                const centerBoltGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 6);
+                const centerBoltMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0x404040,
+                    metalness: 1.0,
+                    roughness: 0.2,
+                    clearcoat: 0.8,
+                    clearcoatRoughness: 0.1
+                });
+                const centerBolt = new THREE.Mesh(centerBoltGeometry, centerBoltMaterial);
+                centerBolt.position.set(config.position.x, config.position.y + 0.21, config.position.z);
+                centerBolt.rotation.x = -Math.PI / 2;
+                centerBolt.castShadow = true;
+                group.add(centerBolt);
+                
+                // Add glass overlay
+                this.createGlassOverlay(group, config);
+                
+                // Add vintage scale markings
+                this.createVintageScaleMarkings(group, config);
                 
                 return {
                     group: group,
-                    needle: needle,
+                    needle: needleGroup,
                     config: config,
                     face: face
                 };
+            }
+            
+            createScrewHeads(group, config) {
+                const screwCount = 8;
+                for (let i = 0; i < screwCount; i++) {
+                    const angle = (Math.PI * 2 * i) / screwCount;
+                    const radius = config.size + 0.25;
+                    const x = Math.cos(angle) * radius;
+                    const z = Math.sin(angle) * radius;
+                    
+                    const screwGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.08, 6);
+                    const screwMaterial = new THREE.MeshPhysicalMaterial({
+                        color: 0x808080,
+                        metalness: 1.0,
+                        roughness: 0.3,
+                        clearcoat: 0.8
+                    });
+                    
+                    const screw = new THREE.Mesh(screwGeometry, screwMaterial);
+                    screw.position.set(
+                        config.position.x + x,
+                        config.position.y + 0.19,
+                        config.position.z + z
+                    );
+                    screw.rotation.x = -Math.PI / 2;
+                    screw.castShadow = true;
+                    group.add(screw);
+                }
+            }
+            
+            createGlassOverlay(group, config) {
+                const glassGeometry = new THREE.CylinderGeometry(config.size + 0.05, config.size + 0.05, 0.02, 64);
+                const glassMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xffffff,
+                    metalness: 0.0,
+                    roughness: 0.0,
+                    transmission: 0.95,
+                    transparent: true,
+                    opacity: 0.1,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.0,
+                    ior: 1.5
+                });
+                
+                const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+                glass.position.set(config.position.x, config.position.y + 0.22, config.position.z);
+                glass.rotation.x = -Math.PI / 2;
+                group.add(glass);
+            }
+            
+            createVintageScaleMarkings(group, config) {
+                const markings = 20;
+                for (let i = 0; i <= markings; i++) {
+                    const angle = -Math.PI * 0.75 + (Math.PI * 1.5 * i / markings);
+                    const x = Math.cos(angle) * (config.size * 0.8);
+                    const z = Math.sin(angle) * (config.size * 0.8);
+                    
+                    const isMajor = i % 5 === 0;
+                    const isMedium = i % 2 === 0 && !isMajor;
+                    
+                    let markHeight, markWidth, markDepth;
+                    if (isMajor) {
+                        markHeight = 0.25;
+                        markWidth = 0.06;
+                        markDepth = 0.03;
+                    } else if (isMedium) {
+                        markHeight = 0.15;
+                        markWidth = 0.04;
+                        markDepth = 0.02;
+                    } else {
+                        markHeight = 0.08;
+                        markWidth = 0.02;
+                        markDepth = 0.01;
+                    }
+                    
+                    const markGeometry = new THREE.BoxGeometry(markWidth, markDepth, markHeight);
+                    const markMaterial = new THREE.MeshPhysicalMaterial({ 
+                        color: isMajor ? 0xffffff : 0xe0e0e0,
+                        emissive: isMajor ? 0x444444 : 0x222222,
+                        emissiveIntensity: 0.3,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        clearcoat: 0.9
+                    });
+                    
+                    const mark = new THREE.Mesh(markGeometry, markMaterial);
+                    mark.position.set(
+                        config.position.x + x, 
+                        config.position.y + 0.17, 
+                        config.position.z + z
+                    );
+                    mark.rotation.x = -Math.PI / 2;
+                    mark.rotation.y = angle + Math.PI / 2;
+                    mark.castShadow = true;
+                    
+                    group.add(mark);
+                }
             }
             
             valueToAngle(value, max) {
@@ -267,21 +463,71 @@
                 const targetAngle = this.valueToAngle(newValue, gauge.config.max);
                 const startAngle = gauge.needle.rotation.z;
                 const startTime = Date.now();
-                const duration = 1000;
+                const duration = 1200; // Vintage spring timing
+                
+                // Spring physics parameters
+                const springK = 0.3;
+                const damping = 0.85;
                 
                 const animate = () => {
                     const elapsed = Date.now() - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    const easeProgress = 1 - Math.pow(1 - progress, 3);
                     
-                    gauge.needle.rotation.z = startAngle + (targetAngle - startAngle) * easeProgress;
+                    // Vintage spring easing with overshoot
+                    let easeProgress;
+                    if (progress < 0.7) {
+                        // Initial smooth acceleration
+                        easeProgress = 1 - Math.pow(1 - (progress / 0.7), 2);
+                    } else {
+                        // Spring bounce with damping
+                        const bounceProgress = (progress - 0.7) / 0.3;
+                        const springForce = Math.sin(bounceProgress * Math.PI * 4) * Math.pow(damping, bounceProgress * 8);
+                        easeProgress = 1 + springForce * 0.1;
+                    }
+                    
+                    const currentAngle = startAngle + (targetAngle - startAngle) * easeProgress;
+                    gauge.needle.rotation.z = currentAngle;
+                    
+                    // Add subtle needle vibration at high values (performance stress simulation)
+                    if (newValue / gauge.config.max > 0.8) {
+                        const vibrationIntensity = (newValue / gauge.config.max - 0.8) * 0.5;
+                        const vibration = Math.sin(elapsed * 0.05) * vibrationIntensity * 0.01;
+                        gauge.needle.rotation.z += vibration;
+                    }
                     
                     if (progress < 1) {
                         requestAnimationFrame(animate);
+                    } else {
+                        // Add vintage glow effect when animation completes
+                        this.addGaugeGlow(gauge);
                     }
                 };
                 
                 animate();
+            }
+            
+            addGaugeGlow(gauge) {
+                // Add dramatic vintage glow effect
+                const originalEmissive = {};
+                
+                gauge.group.traverse((child) => {
+                    if (child.isMesh && child.material && child.material.emissive) {
+                        originalEmissive[child.uuid] = child.material.emissive.getHex();
+                        
+                        // Animate vintage orange glow
+                        const targetEmissive = 0xff6b35;
+                        child.material.emissive.setHex(targetEmissive);
+                        child.material.emissiveIntensity = 0.5;
+                        
+                        // Fade back to original
+                        setTimeout(() => {
+                            child.material.emissive.setHex(originalEmissive[child.uuid] || 0x000000);
+                            child.material.emissiveIntensity = child.material.emissiveIntensity * 0.3;
+                        }, 500);
+                    }
+                });
+                
+                console.log(`✨ Added vintage glow to ${gauge.config.name}`);
             }
             
             animate() {
