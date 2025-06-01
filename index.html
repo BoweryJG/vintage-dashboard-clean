@@ -178,9 +178,9 @@
             
             createGauges() {
                 const gaugeConfigs = [
-                    { name: 'Performance', position: { x: 0, y: 0.2, z: 3 }, value: 75, max: 100, size: 1.5 },
-                    { name: 'Revenue', position: { x: -3, y: 0.5, z: 4 }, value: 60, max: 100, size: 1.2 },
-                    { name: 'Pipeline', position: { x: 3, y: 0.5, z: 4 }, value: 45, max: 100, size: 1.2 }
+                    { name: 'Performance', position: { x: 0, y: 1.0, z: 3 }, value: 75, max: 100, size: 1.5 },
+                    { name: 'Revenue', position: { x: -4, y: 0.0, z: 5 }, value: 60, max: 100, size: 1.2 },
+                    { name: 'Pipeline', position: { x: 4, y: 0.0, z: 5 }, value: 45, max: 100, size: 1.2 }
                 ];
                 
                 gaugeConfigs.forEach(config => {
@@ -234,41 +234,47 @@
                 // VINTAGE: Chrome-tipped needle with vintage tachometer style
                 const needleGroup = new THREE.Group();
                 
-                // Main needle shaft (deep red)
-                const needleShaftGeometry = new THREE.CylinderGeometry(0.02, 0.04, config.size * 0.7, 8);
+                // Main needle shaft (BRIGHT RED FOR VISIBILITY)
+                const needleShaftGeometry = new THREE.CylinderGeometry(0.05, 0.08, config.size * 0.8, 8);
                 const needleShaftMaterial = new THREE.MeshPhysicalMaterial({
-                    color: 0x8B0000,
-                    metalness: 0.3,
-                    roughness: 0.4,
+                    color: 0xff0000,
+                    metalness: 0.1,
+                    roughness: 0.2,
                     clearcoat: 0.9,
-                    clearcoatRoughness: 0.1
+                    clearcoatRoughness: 0.1,
+                    emissive: 0x440000,
+                    emissiveIntensity: 0.5
                 });
                 const needleShaft = new THREE.Mesh(needleShaftGeometry, needleShaftMaterial);
                 needleShaft.position.y = config.size * 0.35;
                 needleShaft.rotation.z = Math.PI / 2;
                 needleGroup.add(needleShaft);
                 
-                // Chrome needle tip
-                const needleTipGeometry = new THREE.ConeGeometry(0.08, 0.25, 8);
+                // BRIGHT Chrome needle tip
+                const needleTipGeometry = new THREE.ConeGeometry(0.12, 0.35, 8);
                 const needleTipMaterial = new THREE.MeshPhysicalMaterial({
                     color: 0xffffff,
                     metalness: 1.0,
                     roughness: 0.05,
                     clearcoat: 1.0,
                     clearcoatRoughness: 0.02,
-                    reflectivity: 1.0
+                    reflectivity: 1.0,
+                    emissive: 0x333333,
+                    emissiveIntensity: 0.3
                 });
                 const needleTip = new THREE.Mesh(needleTipGeometry, needleTipMaterial);
-                needleTip.position.y = config.size * 0.65;
+                needleTip.position.y = config.size * 0.7;
                 needleTip.rotation.z = Math.PI / 2;
                 needleGroup.add(needleTip);
                 
-                // Position and rotate the entire needle - elevated for visibility
-                needleGroup.position.set(config.position.x, config.position.y + 0.20, config.position.z);
+                // Position and rotate the entire needle - MUCH HIGHER FOR VISIBILITY
+                needleGroup.position.set(config.position.x, config.position.y + 0.50, config.position.z);
                 needleGroup.rotation.x = -Math.PI / 2;
                 needleGroup.rotation.z = this.valueToAngle(config.value, config.max);
                 needleGroup.castShadow = true;
                 group.add(needleGroup);
+                
+                console.log(`✅ Created needle for ${config.name} at position:`, needleGroup.position, 'rotation:', needleGroup.rotation.z);
                 
                 // VINTAGE: Steel center bolt with hex head
                 const centerBoltGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 6);
