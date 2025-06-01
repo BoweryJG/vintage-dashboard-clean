@@ -416,11 +416,15 @@
                     // Raycast
                     this.raycaster.setFromCamera(this.mouse, this.camera);
                     
-                    // Get all gauge meshes
+                    // Get all gauge meshes (including vintage styling elements)
                     const allMeshes = [];
                     this.gauges.forEach(gauge => {
-                        allMeshes.push(gauge.face);
-                        allMeshes.push(gauge.needle);
+                        // Add all meshes from the gauge group
+                        gauge.group.traverse((child) => {
+                            if (child.isMesh) {
+                                allMeshes.push(child);
+                            }
+                        });
                     });
                     
                     const intersects = this.raycaster.intersectObjects(allMeshes);
@@ -428,9 +432,17 @@
                     updateDebug('raycastStatus', `Found ${intersects.length} intersections`);
                     
                     if (intersects.length > 0) {
-                        // Find which gauge was clicked
+                        // Find which gauge was clicked by checking which group contains the clicked mesh
                         const clickedMesh = intersects[0].object;
-                        const clickedGauge = this.gauges.find(g => g.face === clickedMesh || g.needle === clickedMesh);
+                        let clickedGauge = null;
+                        
+                        this.gauges.forEach(gauge => {
+                            gauge.group.traverse((child) => {
+                                if (child === clickedMesh) {
+                                    clickedGauge = gauge;
+                                }
+                            });
+                        });
                         
                         if (clickedGauge) {
                             console.log('🎊 GAUGE CLICKED:', clickedGauge.config.name);
