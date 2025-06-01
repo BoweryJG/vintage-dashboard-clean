@@ -231,44 +231,17 @@
                 // Add chrome screw heads around bezel
                 this.createScrewHeads(group, config);
                 
-                // VINTAGE: Chrome-tipped needle with vintage tachometer style
+                // VINTAGE: Single unified needle with vintage tachometer style
                 const needleGroup = new THREE.Group();
                 
-                // Main needle shaft (BRIGHT RED FOR VISIBILITY)
-                const needleShaftGeometry = new THREE.CylinderGeometry(0.05, 0.08, config.size * 0.8, 8);
-                const needleShaftMaterial = new THREE.MeshPhysicalMaterial({
-                    color: 0xff0000,
-                    metalness: 0.1,
-                    roughness: 0.2,
-                    clearcoat: 0.9,
-                    clearcoatRoughness: 0.1,
-                    emissive: 0x440000,
-                    emissiveIntensity: 0.5
-                });
-                const needleShaft = new THREE.Mesh(needleShaftGeometry, needleShaftMaterial);
-                needleShaft.position.x = config.size * 0.35; // HORIZONTAL for vertical gauge
-                needleShaft.rotation.y = Math.PI / 2; // Point horizontally
-                needleGroup.add(needleShaft);
-                
-                // BRIGHT Chrome needle tip
-                const needleTipGeometry = new THREE.ConeGeometry(0.12, 0.35, 8);
-                const needleTipMaterial = new THREE.MeshPhysicalMaterial({
-                    color: 0xffffff,
-                    metalness: 1.0,
-                    roughness: 0.05,
-                    clearcoat: 1.0,
-                    clearcoatRoughness: 0.02,
-                    reflectivity: 1.0,
-                    emissive: 0x333333,
-                    emissiveIntensity: 0.3
-                });
-                const needleTip = new THREE.Mesh(needleTipGeometry, needleTipMaterial);
-                needleTip.position.x = config.size * 0.7; // HORIZONTAL tip for vertical gauge
-                needleTip.rotation.y = Math.PI / 2; // Point horizontally  
-                needleGroup.add(needleTip);
+                // Create single unified needle geometry for guaranteed visibility
+                const needle = this.createUnifiedNeedle(config.size);
+                needle.position.set(0, 0, 0); // Centered in needleGroup
+                needle.castShadow = true;
+                needleGroup.add(needle);
                 
                 // Position and rotate the entire needle - VERTICAL WALL MOUNT STYLE
-                needleGroup.position.set(config.position.x, config.position.y, config.position.z + 0.10);
+                needleGroup.position.set(config.position.x, config.position.y, config.position.z + 0.15);
                 needleGroup.rotation.x = 0; // NO rotation for vertical mount
                 needleGroup.rotation.z = this.valueToAngle(config.value, config.max); // Rotate around Z for wall mount
                 needleGroup.castShadow = true;
@@ -286,7 +259,7 @@
                     clearcoatRoughness: 0.1
                 });
                 const centerBolt = new THREE.Mesh(centerBoltGeometry, centerBoltMaterial);
-                centerBolt.position.set(config.position.x, config.position.y, config.position.z + 0.07);
+                centerBolt.position.set(config.position.x, config.position.y, config.position.z + 0.20);
                 centerBolt.rotation.x = 0; // VERTICAL center bolt
                 centerBolt.castShadow = true;
                 group.add(centerBolt);
@@ -303,6 +276,71 @@
                     config: config,
                     face: face
                 };
+            }
+            
+            createUnifiedNeedle(gaugeSize) {
+                // Create a single unified needle geometry to ensure visibility
+                const needleLength = gaugeSize * 0.75;
+                const needleWidth = 0.08;
+                
+                // Define needle shape points (vintage tachometer style)
+                const shape = new THREE.Shape();
+                
+                // Start at center (pivot point)
+                shape.moveTo(0, 0);
+                
+                // Create needle outline - tapered from center to tip
+                shape.lineTo(-0.15, -needleWidth/2);  // Back left
+                shape.lineTo(-0.15, needleWidth/2);   // Back right
+                shape.lineTo(needleLength * 0.8, needleWidth/3); // Shaft right
+                shape.lineTo(needleLength, 0);        // Sharp tip
+                shape.lineTo(needleLength * 0.8, -needleWidth/3); // Shaft left
+                shape.lineTo(-0.15, -needleWidth/2);  // Back to start
+                
+                // Extrude the shape to create 3D needle
+                const extrudeSettings = {
+                    depth: 0.04,
+                    bevelEnabled: true,
+                    bevelSegments: 4,
+                    steps: 1,
+                    bevelSize: 0.01,
+                    bevelThickness: 0.01
+                };
+                
+                const needleGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                
+                // Center the geometry
+                needleGeometry.translate(0, 0, -extrudeSettings.depth/2);
+                
+                // Create vintage needle material (bright red for maximum visibility)
+                const needleMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xff2020,
+                    metalness: 0.2,
+                    roughness: 0.3,
+                    clearcoat: 0.9,
+                    clearcoatRoughness: 0.1,
+                    emissive: 0x440000,
+                    emissiveIntensity: 0.4
+                });
+                
+                const needleMesh = new THREE.Mesh(needleGeometry, needleMaterial);
+                
+                // Add chrome tip accent
+                const tipGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                const tipMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xffffff,
+                    metalness: 1.0,
+                    roughness: 0.05,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.02,
+                    reflectivity: 1.0
+                });
+                const tip = new THREE.Mesh(tipGeometry, tipMaterial);
+                tip.position.x = needleLength;
+                needleMesh.add(tip);
+                
+                console.log(`✅ Created unified needle with length ${needleLength}`);
+                return needleMesh;
             }
             
             createScrewHeads(group, config) {
