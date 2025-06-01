@@ -195,7 +195,7 @@
             createGauge(config) {
                 const group = new THREE.Group();
                 
-                // VINTAGE: Brushed aluminum gauge face - VERTICAL WALL MOUNT
+                // VINTAGE: Brushed aluminum gauge face - PROPER WALL MOUNT
                 const faceGeometry = new THREE.CylinderGeometry(config.size, config.size, 0.12, 64);
                 const faceMaterial = new THREE.MeshPhysicalMaterial({
                     color: 0x2a2a2a,
@@ -207,7 +207,7 @@
                 });
                 const face = new THREE.Mesh(faceGeometry, faceMaterial);
                 face.position.set(config.position.x, config.position.y, config.position.z);
-                face.rotation.x = 0; // VERTICAL - no rotation for wall mount
+                face.rotation.x = Math.PI / 2; // Rotate 90° to face forward like wall mount
                 face.castShadow = true;
                 face.receiveShadow = true;
                 group.add(face);
@@ -224,7 +224,7 @@
                 });
                 const bezel = new THREE.Mesh(bezelGeometry, bezelMaterial);
                 bezel.position.set(config.position.x, config.position.y, config.position.z);
-                bezel.rotation.x = 0; // VERTICAL bezel
+                bezel.rotation.x = Math.PI / 2; // Match face orientation
                 bezel.castShadow = true;
                 group.add(bezel);
                 
@@ -387,7 +387,7 @@
                 
                 const glass = new THREE.Mesh(glassGeometry, glassMaterial);
                 glass.position.set(config.position.x, config.position.y, config.position.z + 0.05);
-                glass.rotation.x = 0; // VERTICAL glass
+                glass.rotation.x = Math.PI / 2; // Match face orientation
                 group.add(glass);
             }
             
